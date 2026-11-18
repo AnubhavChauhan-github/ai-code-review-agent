@@ -25,6 +25,8 @@ public class ToolCallingAgentService {
 	
 	private final JavaFileTool fileTool;
 	
+	private final JavaCodeAnalyzer analyzer;
+	
 	private final HttpClient client = 
 			HttpClient.newBuilder()
 					.connectTimeout(Duration.ofSeconds(15))
@@ -32,8 +34,10 @@ public class ToolCallingAgentService {
 	
 	private final JsonMapper mapper = new JsonMapper();
 	
-	public ToolCallingAgentService(JavaFileTool fileTool) {
+	public ToolCallingAgentService(JavaFileTool fileTool, 
+								JavaCodeAnalyzer analyzer) {
 		this.fileTool = fileTool;
+		this.analyzer = analyzer;
 	}
 	
 	public String review(String fileName) throws Exception{
@@ -254,6 +258,11 @@ public class ToolCallingAgentService {
 						+ requestedFile);
 					
 			String fileContent = fileTool.readFile(requestedFile);
+			
+			String analysisResult = analyzer.analyze(fileContent);
+			
+			System.out.println("Java analyzer resutl:");
+			System.out.println(analysisResult);
 					
 			if(fileContent.startsWith("Invalid Java filename") 
 					|| fileContent.startsWith("File access denied")
@@ -306,6 +315,27 @@ public class ToolCallingAgentService {
 						""".formatted(fileName, fileContent)
 					));
 				}
+			
+			messages.add(Map.of(
+					"role", "user",
+					"content", """
+							Additional Java static-analysis results:
+							
+							%s
+							
+							These findings come from a limited
+							rule based analyzer.
+							
+							IMPORTANT:
+							- Treat these as potential issues,
+								not automatically verified bugs.
+							- Check each finding against the source code.
+							- Explain valid findings with reproducing inputs.
+							- Do not invest additional problems.
+							- Do not repeat the same finding.
+							- Use JUnit Jupiter for suggested tests.
+							""".formatted(analysisResult)
+					));
 				
 			messages.add(Map.of(
 					"role", "system",
