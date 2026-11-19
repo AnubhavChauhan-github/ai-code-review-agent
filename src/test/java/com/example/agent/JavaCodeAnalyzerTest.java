@@ -3,6 +3,7 @@ package com.example.agent;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import java.util.List;
 
 public class JavaCodeAnalyzerTest {
 	
@@ -61,5 +62,84 @@ public class JavaCodeAnalyzerTest {
 				"No issues detected by the current Java rules.", result);
 		
 	}
+	
+	@Test
+	void returnStructuredFinding() {
+		
+		String source = """
+				
+				public class Calculator{
+				
+					public int findMax(int [] numbers){
+					
+						int max = 0;
+						
+						for(int number : numbers){
+							if(number > max){
+								max = number;
+							}
+						}
+						
+						return max;
+					
+					}
+				
+				}
+				
+				""";
+		
+		List<CodeReviewFinding> findings = 
+				analyzer.analyzeFindings(source);
+		
+		assertEquals(1, findings.size());
+		
+		CodeReviewFinding finding = findings.get(0);
+		
+		assertEquals("MEDIUM", finding.severity());
+		assertEquals("findMax", finding.method());
+		
+		assertTrue(
+				finding.problem().contains("initialized to zero")
+				);
+		
+		
+	}
+	
+	@Test
+	void detectsMaxBugAfterInputValidation() {
+		
+		String source = """
+				public class Calculator{
+				
+					public int findMax(int [] numbers){
+					
+						if(numbers == null || numbers.length == 0){
+							throw new IllegalArgumentException(
+								"Array cannot be null or empty"
+							);
+						}
+						
+						int max = 0;
+						
+						for(int number : numbers){
+							if(number > max){
+								max = number;
+							}
+						}
+						
+						return max;
+					}
+					
+				}
+				
+				""";
+		
+		List<CodeReviewFinding> findings = 
+				analyzer.analyzeFindings(source);
+		
+		assertEquals(1, findings.size());
+		assertEquals("findMax", findings.get(0).method());
+	}
+	
 
 }
