@@ -14,6 +14,24 @@ class ReviewAccuracyTestTest{
 	}
 	
 	@Test
+	void findMaxWithZero() {
+		ReviewAccuracyTest calculator = new ReviewAccuracyTest();
+		
+		int[] numbers = {0,-3,-5};
+		
+		assertEquals(0, calculator.findMax(numbers));
+	}
+	
+	@Test
+	void findMaxWithNullArray() {
+		ReviewAccuracyTest calculator = new ReviewAccuracyTest();
+		
+		assertThrows(
+				IllegalArgumentException.class, 
+				() -> calculator.findMax(null));
+	}
+	
+	@Test
 	void findMaxWithPositiveNumbers() {
 		ReviewAccuracyTest calculator = new ReviewAccuracyTest();
 		
