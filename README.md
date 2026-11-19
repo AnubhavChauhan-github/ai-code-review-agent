@@ -270,3 +270,94 @@ Contributions, suggestions, and bug reports are welcome. Feel free to open an is
 **Work in progress — functional prototype**
 
 The REST API, Ollama integration, and file-reading workflow are implemented. The current development focus is improving the accuracy and reliability of generated code reviews.
+
+## AI Code Review Agent — Latest Features
+
+This project is a Java 21 and Spring Boot application that uses a locally running Ollama model (`qwen2.5-coder:1.5b`) to review Java source code.
+
+### Features
+
+- REST API endpoint for requesting code reviews.
+- Ollama-powered tool calling to request Java source files.
+- Secure workspace-based file reading with filename and size validation.
+- Rule-based Java code analysis with structured findings.
+- Detection of a known maximum-value initialization bug.
+- Automated JUnit 5 regression-test suggestions for supported findings.
+- Unit tests using JUnit 5.
+
+### Example API Request
+
+**POST** `http://localhost:8080/api/agent/review`
+
+```json
+{
+  "fileName": "Calculator.java"
+}
+```
+
+### Example Bug Detection
+
+Consider this implementation:
+
+```java
+public int findMax(int[] numbers) {
+    int max = 0;
+
+    for (int number : numbers) {
+        if (number > max) {
+            max = number;
+        }
+    }
+
+    return max;
+}
+```
+
+For input `{-8, -3, -5}`, the method incorrectly returns `0` instead of `-3`.
+
+The analyzer identifies this as a potential correctness issue and the AI explains the problem.
+
+### Suggested Fix
+
+```java
+public int findMax(int[] numbers) {
+    if (numbers == null || numbers.length == 0) {
+        throw new IllegalArgumentException("Array cannot be null or empty");
+    }
+
+    int max = numbers[0];
+
+    for (int number : numbers) {
+        if (number > max) {
+            max = number;
+        }
+    }
+
+    return max;
+}
+```
+
+The null/empty-array exception is an example of an explicitly defined input contract.
+
+### Generated JUnit 5 Test
+
+```java
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+
+class CalculatorTest {
+    @Test
+    void findMaxWithNegativeNumbers() {
+        Calculator calculator = new Calculator();
+        int[] numbers = {-8, -3, -5};
+
+        assertEquals(-3, calculator.findMax(numbers));
+    }
+}
+```
+
+The suggested regression test demonstrates the expected behaviour. The agent does not automatically compile or execute its generated test templates.
+
+### Current Limitations
+
+The static analyzer uses heuristic rules rather than full Java syntax analysis. AI-generated explanations should be reviewed for accuracy. Syntax-aware parsing, broader rule coverage, and additional integration tests are planned improvements.
