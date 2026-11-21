@@ -142,4 +142,78 @@ public class JavaCodeAnalyzerTest {
 	}
 	
 
+@Test
+void ignoresCorrectMaxInitialization() {
+
+    String source = """
+        class Calculator {
+            int findMax(int[] numbers) {
+                int max = numbers[0];
+
+                for (int n : numbers) {
+                    if (n > max) {
+                        max = n;
+                    }
+                }
+                return max;
+            }
+        }
+        """;
+
+    assertTrue(analyzer.analyzeFindings(source).isEmpty());
+}
+
+@Test
+void ignoresZeroInitializationInUnrelatedMethod() {
+
+    String source = """
+        class Calculator {
+            int sum(int[] numbers) {
+                int max = 0;
+
+                for (int n : numbers) {
+                    max += n;
+                }
+                return max;
+            }
+        }
+        """;
+
+    assertTrue(analyzer.analyzeFindings(source).isEmpty());
+}
+
+@Test
+void ignoresMaxWhenLoopUsesDifferentComparison() {
+
+    String source = """
+        class Calculator {
+            int findMax(int[] numbers) {
+                int max = 0;
+
+                for (int n : numbers) {
+                    if (n < max) {
+                        max = n;
+                    }
+                }
+                return max;
+            }
+        }
+        """;
+
+    assertTrue(analyzer.analyzeFindings(source).isEmpty());
+}
+
+@Test
+void handlesBlankAndInvalidJavaSafely() {
+
+    assertTrue(analyzer.analyzeFindings(null).isEmpty());
+
+    assertTrue(analyzer.analyzeFindings("").isEmpty());
+
+    assertTrue(analyzer.analyzeFindings(
+            "class Calculator { int findMax(").isEmpty());
+}
+
+	
+
 }
