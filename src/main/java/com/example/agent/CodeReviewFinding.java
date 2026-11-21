@@ -6,7 +6,21 @@ public record CodeReviewFinding(
 		String method,
 		String problem,
 		String reproducingInput,
-		String suggestedFix
+		String suggestedFix,
+		Integer lineNumber
 		) {
+	
+	public CodeReviewFinding(
+            String severity,
+            String method,
+            String problem,
+            String reproducingInput,
+            String suggestedFix) {
+
+        this(severity, method, problem,
+             reproducingInput, suggestedFix, null);
+    }
 
 }
+
+

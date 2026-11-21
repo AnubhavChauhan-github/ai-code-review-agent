@@ -142,78 +142,102 @@ public class JavaCodeAnalyzerTest {
 	}
 	
 
-@Test
-void ignoresCorrectMaxInitialization() {
+		@Test
+		void ignoresCorrectMaxInitialization() {
+		
+		    String source = """
+		        class Calculator {
+		            int findMax(int[] numbers) {
+		                int max = numbers[0];
+		
+		                for (int n : numbers) {
+		                    if (n > max) {
+		                        max = n;
+		                    }
+		                }
+		                return max;
+		            }
+		        }
+		        """;
+		
+		    assertTrue(analyzer.analyzeFindings(source).isEmpty());
+		}
+		
+		@Test
+		void ignoresZeroInitializationInUnrelatedMethod() {
+		
+		    String source = """
+		        class Calculator {
+		            int sum(int[] numbers) {
+		                int max = 0;
+		
+		                for (int n : numbers) {
+		                    max += n;
+		                }
+		                return max;
+		            }
+		        }
+		        """;
+		
+		    assertTrue(analyzer.analyzeFindings(source).isEmpty());
+		}
+		
+		@Test
+		void ignoresMaxWhenLoopUsesDifferentComparison() {
+		
+		    String source = """
+		        class Calculator {
+		            int findMax(int[] numbers) {
+		                int max = 0;
+		
+		                for (int n : numbers) {
+		                    if (n < max) {
+		                        max = n;
+		                    }
+		                }
+		                return max;
+		            }
+		        }
+		        """;
+		
+		    assertTrue(analyzer.analyzeFindings(source).isEmpty());
+		}
+		
+		@Test
+		void handlesBlankAndInvalidJavaSafely() {
+		
+		    assertTrue(analyzer.analyzeFindings(null).isEmpty());
+		
+		    assertTrue(analyzer.analyzeFindings("").isEmpty());
+		
+		    assertTrue(analyzer.analyzeFindings(
+		            "class Calculator { int findMax(").isEmpty());
+		}
 
-    String source = """
-        class Calculator {
-            int findMax(int[] numbers) {
-                int max = numbers[0];
-
-                for (int n : numbers) {
-                    if (n > max) {
-                        max = n;
-                    }
-                }
-                return max;
-            }
-        }
-        """;
-
-    assertTrue(analyzer.analyzeFindings(source).isEmpty());
-}
-
-@Test
-void ignoresZeroInitializationInUnrelatedMethod() {
-
-    String source = """
-        class Calculator {
-            int sum(int[] numbers) {
-                int max = 0;
-
-                for (int n : numbers) {
-                    max += n;
-                }
-                return max;
-            }
-        }
-        """;
-
-    assertTrue(analyzer.analyzeFindings(source).isEmpty());
-}
-
-@Test
-void ignoresMaxWhenLoopUsesDifferentComparison() {
-
-    String source = """
-        class Calculator {
-            int findMax(int[] numbers) {
-                int max = 0;
-
-                for (int n : numbers) {
-                    if (n < max) {
-                        max = n;
-                    }
-                }
-                return max;
-            }
-        }
-        """;
-
-    assertTrue(analyzer.analyzeFindings(source).isEmpty());
-}
-
-@Test
-void handlesBlankAndInvalidJavaSafely() {
-
-    assertTrue(analyzer.analyzeFindings(null).isEmpty());
-
-    assertTrue(analyzer.analyzeFindings("").isEmpty());
-
-    assertTrue(analyzer.analyzeFindings(
-            "class Calculator { int findMax(").isEmpty());
-}
-
-	
+		
+		@Test
+		void reportsFaultyInitializationLine() {
+			
+			String source ="""
+					class Calculator{
+					
+						int findMax(int [] numbers){
+							int max = 0;
+							for(int n : numbers){
+								if(n > max){
+									max = n;
+								}
+							}
+							return max;
+						}
+					}
+					""";
+			
+			List<CodeReviewFinding> findings =
+					analyzer.analyzeFindings(source);
+			
+			assertEquals(1, findings.size());
+			assertEquals(4, findings.get(0).lineNumber());
+		}
 
 }

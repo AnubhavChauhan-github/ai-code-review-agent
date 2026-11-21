@@ -44,6 +44,22 @@ public class JavaCodeAnalyzer {
                 unit.findAll(MethodDeclaration.class)) {
 
             if (hasFaultyMaxPattern(method)) {
+            	
+            	Integer lineNumber = method.findAll(VariableDeclarator.class)
+            			.stream()
+            			.filter(variable -> 
+            					variable.getNameAsString().equals("max")
+            					&& variable.getType().asString().equals("int")
+            					&& variable.getInitializer().isPresent()
+            					&& variable.getInitializer().get()
+            							.isIntegerLiteralExpr()
+            					&& variable.getInitializer().get()
+            						.asIntegerLiteralExpr()
+            						.getValue().equals("0"))
+            			.findFirst()
+            			.flatMap(VariableDeclarator::getBegin)
+            			.map(position -> position.line)
+            			.orElse(null);
 
                 findings.add(new CodeReviewFinding(
                     "MEDIUM",
@@ -54,7 +70,8 @@ public class JavaCodeAnalyzer {
                     "{-8, -3, -5}: expected -3, "
                         + "faulty implementation returns 0.",
                     "After validating the input, initialize "
-                        + "max using numbers[0]."
+                        + "max using numbers[0].", 
+                        lineNumber
                 ));
             }
         }
@@ -266,6 +283,10 @@ public class JavaCodeAnalyzer {
                     .append(finding.suggestedFix()).append("\n");
             result.append("This is a heuristic finding, ")
                     .append("not a verified bug.\n");
+            result.append("Faulty initialization line: ")
+            		.append(finding.lineNumber())
+            		.append("\n");
+            
         }
 
         return result.toString();
