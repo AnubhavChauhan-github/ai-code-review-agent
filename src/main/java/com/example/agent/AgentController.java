@@ -19,8 +19,9 @@ public class AgentController {
 	public record AgentRequest(String fileName) {}
 	
 	@PostMapping("/review")
-	public String review(@RequestBody AgentRequest request) throws Exception{
-		
-		return agentService.review(request.fileName());
+	public ReviewResponse review(
+	        @RequestBody AgentRequest request) throws Exception {
+
+	    return agentService.review(request.fileName());
 	}
 }

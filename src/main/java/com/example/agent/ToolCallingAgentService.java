@@ -29,6 +29,8 @@ public class ToolCallingAgentService {
 	
 	private final JUnitTestSuggestionGenerator testGenerator;
 	
+	private final AiRiskAnalyzer riskAnalyzer;
+	
 	private final HttpClient client = 
 			HttpClient.newBuilder()
 					.connectTimeout(Duration.ofSeconds(15))
@@ -36,15 +38,21 @@ public class ToolCallingAgentService {
 	
 	private final JsonMapper mapper = new JsonMapper();
 	
-	public ToolCallingAgentService(JavaFileTool fileTool, 
-								JavaCodeAnalyzer analyzer,
-								JUnitTestSuggestionGenerator testGenerator) {
-		this.fileTool = fileTool;
-		this.analyzer = analyzer;
-		this.testGenerator = testGenerator;
+
+	public ToolCallingAgentService(
+		      JavaFileTool fileTool,
+		      JavaCodeAnalyzer analyzer,
+		      JUnitTestSuggestionGenerator testGenerator,
+		      AiRiskAnalyzer riskAnalyzer) {
+		
+		    this.fileTool = fileTool;
+		    this.analyzer = analyzer;
+		    this.testGenerator = testGenerator;
+		    this.riskAnalyzer = riskAnalyzer;
 	}
+
 	
-	public String review(String fileName) throws Exception{
+	public ReviewResponse review(String fileName) throws Exception{
 		
 		if(fileName == null || 
 			!fileName.matches("[A-Za-z0-9_-]+[.]java")) {
@@ -206,6 +214,18 @@ public class ToolCallingAgentService {
 					analyzer.analyzeFindings(fileContent);
 			
 			String analysisResult = analyzer.analyze(fileContent);
+			
+
+			List<CodeReviewFinding> riskFindings =
+			        riskAnalyzer.analyze(fileContent);
+			
+			String riskSummary = riskFindings.isEmpty()
+			        ? "No risks identified by the current risk rules."
+			        : riskFindings.toString();
+			
+			System.out.println("AI code risk findings:");
+			System.out.println(riskSummary);
+
 			
 			String className = requestedFile.substring(
 					0, requestedFile.length() - ".java".length()
@@ -379,16 +399,23 @@ public class ToolCallingAgentService {
 						+ review
 						);
 			}
+	
 			
-			if(!findings.isEmpty() 
-					&& !suggestedTest.startsWith("No test template")) {
-				
-				return review 
-						+ "\n\nSuggested JUnit 5 Regression Test:\n"
-						+ suggestedTest;
-			}
+
+			String junitSuggestion = findings.isEmpty()
+			        || suggestedTest.startsWith("No test template")
+			        ? null
+			        : suggestedTest;
 			
-			return review;		
+			return new ReviewResponse(
+			        requestedFile,
+			        findings,
+			        riskFindings,
+			        review,
+			        junitSuggestion,
+			        "NOT_EXECUTED"
+			);
+		
 			
 	}
 	
