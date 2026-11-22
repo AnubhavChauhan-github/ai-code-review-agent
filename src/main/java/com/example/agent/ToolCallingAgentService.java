@@ -31,6 +31,11 @@ public class ToolCallingAgentService {
 	
 	private final AiRiskAnalyzer riskAnalyzer;
 	
+	private final ReviewClaimValidator claimValidator;
+	
+	private final ProductionReliabilityAnalyzer reliabilityAnalyzer;
+
+	
 	private final HttpClient client = 
 			HttpClient.newBuilder()
 					.connectTimeout(Duration.ofSeconds(15))
@@ -39,17 +44,23 @@ public class ToolCallingAgentService {
 	private final JsonMapper mapper = new JsonMapper();
 	
 
+
 	public ToolCallingAgentService(
-		      JavaFileTool fileTool,
-		      JavaCodeAnalyzer analyzer,
-		      JUnitTestSuggestionGenerator testGenerator,
-		      AiRiskAnalyzer riskAnalyzer) {
-		
-		    this.fileTool = fileTool;
-		    this.analyzer = analyzer;
-		    this.testGenerator = testGenerator;
-		    this.riskAnalyzer = riskAnalyzer;
+	        JavaFileTool fileTool,
+	        JavaCodeAnalyzer analyzer,
+	        JUnitTestSuggestionGenerator testGenerator,
+	        AiRiskAnalyzer riskAnalyzer,
+	        ReviewClaimValidator claimValidator,
+	        ProductionReliabilityAnalyzer reliabilityAnalyzer) {
+	
+	    this.fileTool = fileTool;
+	    this.analyzer = analyzer;
+	    this.testGenerator = testGenerator;
+	    this.riskAnalyzer = riskAnalyzer;
+	    this.claimValidator = claimValidator;
+	    this.reliabilityAnalyzer = reliabilityAnalyzer;
 	}
+
 
 	
 	public ReviewResponse review(String fileName) throws Exception{
@@ -212,6 +223,11 @@ public class ToolCallingAgentService {
 			
 			List<CodeReviewFinding> findings = 
 					analyzer.analyzeFindings(fileContent);
+			
+
+			List<CodeReviewFinding> reliabilityFindings =
+			        reliabilityAnalyzer.analyze(fileContent);
+
 			
 			String analysisResult = analyzer.analyze(fileContent);
 			
@@ -379,6 +395,15 @@ public class ToolCallingAgentService {
 					.path("content")
 					.asString("");
 			
+
+			String verificationStatus = "NOT_EXECUTED";
+			
+			List<String> claimWarnings =
+			        claimValidator.validate(
+			            review,
+			            verificationStatus
+			        );
+
 			if(review.isBlank()) {
 				throw new IllegalStateException(
 						"Ollama returned an empty review"
@@ -400,8 +425,6 @@ public class ToolCallingAgentService {
 						);
 			}
 	
-			
-
 			String junitSuggestion = findings.isEmpty()
 			        || suggestedTest.startsWith("No test template")
 			        ? null
@@ -413,9 +436,10 @@ public class ToolCallingAgentService {
 			        riskFindings,
 			        review,
 			        junitSuggestion,
-			        "NOT_EXECUTED"
+			        verificationStatus,
+			        claimWarnings,
+			        reliabilityFindings
 			);
-		
 			
 	}
 	

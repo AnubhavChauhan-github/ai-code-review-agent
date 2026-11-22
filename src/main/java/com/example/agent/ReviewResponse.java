@@ -9,6 +9,8 @@ public record ReviewResponse(
         List<CodeReviewFinding> riskFindings,
         String aiExplanation,
         String suggestedJUnitTest,
-        String verificationStatus
+        String verificationStatus,
+        List<String> claimWarnings,
+        List<CodeReviewFinding> reliabilityFindings
 ) {
 }
