@@ -70,6 +70,16 @@ public class ReviewPromptBuilder {
 			Do not claim the fixes were verified.
 			Do not generate JUnit tests.
 			Keep the response concise.
+			
+			OUTPUT RULES:
+			- Start with JAVA CODE REVIEW.
+			- Only report supplied findings under their correct category.
+			- Do not move reliability findings into the security category.
+			- Do not repeat findings or sections.
+			- Each finding must appear exactly once.
+			- Do not repeat raw analyzer output.
+			- Explain only the risks, consequences, and minimal fixes.
+			- Do not claim any proposed fix was verified.
 
             """.formatted(
                 fileName,

@@ -89,4 +89,24 @@ class SuggestedFixValidatorTest {
 
         assertTrue(warnings.isEmpty());
     }
+    
+
+	@Test
+	void flagsInlineFixedThreadPoolSuggestion() {
+	
+	    String review = """
+	        Replace the cached executor with
+	        Executors.newFixedThreadPool(10).
+	        """;
+	
+	    var warnings = validator.validate(
+	        review,
+	        List.of(reliabilityFinding(
+	            "Cached thread pool may create too many threads."
+	        ))
+	    );
+	
+	    assertEquals(1, warnings.size());
+	}
+
 }

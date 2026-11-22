@@ -67,6 +67,16 @@ public class SuggestedFixValidator {
                 queueAddFound = true;
             }
         }
+        
+        if (threadRisk
+		        && FIXED_POOL.matcher(aiReview).find()) {
+		    fixedPoolFound = true;
+		}
+		
+		if (queueRisk
+		        && QUEUE_ADD.matcher(aiReview).find()) {
+		    queueAddFound = true;
+		}
 
         if (fixedPoolFound) {
             warnings.add(
