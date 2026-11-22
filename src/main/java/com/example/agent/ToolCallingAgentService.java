@@ -403,6 +403,17 @@ public class ToolCallingAgentService {
 			            review,
 			            verificationStatus
 			        );
+			
+
+			claimWarnings.addAll(
+			    claimValidator.validateAgainstFindings(
+			        review,
+			        findings,
+			        riskFindings,
+			        reliabilityFindings
+			    )
+			);
+
 
 			if(review.isBlank()) {
 				throw new IllegalStateException(

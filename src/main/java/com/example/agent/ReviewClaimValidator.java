@@ -60,4 +60,52 @@ public class ReviewClaimValidator {
 
         return warnings;
     }
+    
+
+		public List<String> validateAgainstFindings(
+		        String aiReview,
+		        List<CodeReviewFinding> correctnessFindings,
+		        List<CodeReviewFinding> riskFindings,
+		        List<CodeReviewFinding> reliabilityFindings) {
+		
+		    List<String> warnings = new ArrayList<>();
+		
+		    if (aiReview == null || aiReview.isBlank()) {
+		        return warnings;
+		    }
+		
+		    int totalFindings =
+		            correctnessFindings.size()
+		            + riskFindings.size()
+		            + reliabilityFindings.size();
+		
+		    if (totalFindings == 0) {
+		        return warnings;
+		    }
+		
+		    Pattern noIssuesClaim = Pattern.compile(
+		        "\\b(?:there\\s+are\\s+)?no\\s+"
+		        + "(?:potential\\s+)?issues\\s+"
+		        + "(?:were\\s+)?detected\\b"
+		        + "|\\bdoes\\s+not\\s+contain\\s+"
+		        + "any\\s+(?:potential\\s+)?"
+		        + "(?:issues|problems|errors)\\b"
+		        + "|\\bno\\s+suggested\\s+fixes\\b"
+		        + "|\\bdoes\\s+not\\s+require\\s+"
+		        + "any\\s+modifications\\b",
+		        Pattern.CASE_INSENSITIVE
+		    );
+		
+		    if (noIssuesClaim.matcher(aiReview).find()) {
+		        warnings.add(
+		            "AI review may contradict deterministic findings. "
+		            + totalFindings
+		            + " finding(s) exist, but the explanation "
+		            + "claims no issues or fixes are needed."
+		        );
+		    }
+		
+		    return warnings;
+		}
+
 }
