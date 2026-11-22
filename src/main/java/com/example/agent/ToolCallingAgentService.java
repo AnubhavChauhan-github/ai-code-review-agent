@@ -37,6 +37,8 @@ public class ToolCallingAgentService {
 
 	private final ReviewPromptBuilder promptBuilder;
 	
+	private final SuggestedFixValidator suggestedFixValidator;
+	
 	private final HttpClient client = 
 			HttpClient.newBuilder()
 					.connectTimeout(Duration.ofSeconds(15))
@@ -53,7 +55,8 @@ public class ToolCallingAgentService {
 	        AiRiskAnalyzer riskAnalyzer,
 	        ReviewClaimValidator claimValidator,
 	        ProductionReliabilityAnalyzer reliabilityAnalyzer,
-	        ReviewPromptBuilder promptBuilder ) {
+	        ReviewPromptBuilder promptBuilder, 
+	        SuggestedFixValidator suggestedFixValidator) {
 		
 	
 	    this.fileTool = fileTool;
@@ -63,6 +66,7 @@ public class ToolCallingAgentService {
 	    this.claimValidator = claimValidator;
 	    this.reliabilityAnalyzer = reliabilityAnalyzer;
 	    this.promptBuilder = promptBuilder;
+	    this.suggestedFixValidator = suggestedFixValidator;
 	}
 
 
@@ -414,13 +418,22 @@ public class ToolCallingAgentService {
 			
 
 			claimWarnings.addAll(
-			    claimValidator.validateAgainstFindings(
+				    claimValidator.validateAgainstFindings(
+				        review,
+				        findings,
+				        riskFindings,
+				        reliabilityFindings
+				    )
+				);
+			
+
+			claimWarnings.addAll(
+			    suggestedFixValidator.validate(
 			        review,
-			        findings,
-			        riskFindings,
 			        reliabilityFindings
 			    )
 			);
+
 
 
 			if(review.isBlank()) {

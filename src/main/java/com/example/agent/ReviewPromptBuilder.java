@@ -52,7 +52,25 @@ public class ReviewPromptBuilder {
             VERIFICATION STATUS:
             NOT_EXECUTED
 
-            Explain the findings and suggest minimal fixes.
+            
+			OUTPUT FORMAT:
+			
+			Start with JAVA CODE REVIEW.
+			
+			For each supplied finding, provide:
+			- Method and source line
+			- Why the pattern is potentially risky
+			- Conditions that could cause production failure
+			- A minimal suggested fix
+			- Any limitations or tradeoffs
+			
+			Explain each finding exactly once.
+			Do not repeat the supplied analysis verbatim.
+			Do not repeat sections.
+			Do not claim the fixes were verified.
+			Do not generate JUnit tests.
+			Keep the response concise.
+
             """.formatted(
                 fileName,
                 sourceCode,
