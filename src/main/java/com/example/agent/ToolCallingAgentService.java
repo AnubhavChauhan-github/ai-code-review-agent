@@ -35,6 +35,7 @@ public class ToolCallingAgentService {
 	
 	private final ProductionReliabilityAnalyzer reliabilityAnalyzer;
 
+	private final ReviewPromptBuilder promptBuilder;
 	
 	private final HttpClient client = 
 			HttpClient.newBuilder()
@@ -51,7 +52,9 @@ public class ToolCallingAgentService {
 	        JUnitTestSuggestionGenerator testGenerator,
 	        AiRiskAnalyzer riskAnalyzer,
 	        ReviewClaimValidator claimValidator,
-	        ProductionReliabilityAnalyzer reliabilityAnalyzer) {
+	        ProductionReliabilityAnalyzer reliabilityAnalyzer,
+	        ReviewPromptBuilder promptBuilder ) {
+		
 	
 	    this.fileTool = fileTool;
 	    this.analyzer = analyzer;
@@ -59,6 +62,7 @@ public class ToolCallingAgentService {
 	    this.riskAnalyzer = riskAnalyzer;
 	    this.claimValidator = claimValidator;
 	    this.reliabilityAnalyzer = reliabilityAnalyzer;
+	    this.promptBuilder = promptBuilder;
 	}
 
 
@@ -338,7 +342,21 @@ public class ToolCallingAgentService {
 							)
 						);
 
+				String reviewPrompt = promptBuilder.build(
+				        requestedFile,
+				        fileContent,
+				        findings,
+				        riskFindings,
+				        reliabilityFindings
+				);
+			
 
+				System.out.println(
+				        "\n========== FINAL OLLAMA PROMPT ==========\n"
+				        + reviewPrompt
+				        + "\n=========================================\n"
+				);
+			
 				List<Object> reviewMessages = new ArrayList<>();
 					
 				reviewMessages.add(Map.of(
@@ -362,22 +380,12 @@ public class ToolCallingAgentService {
 					        """
 					));
 					
+
 				reviewMessages.add(Map.of(
-					    "role", "user",
-					    "content", """
-					        Filename: %s
-					
-					        BEGIN_JAVA_SOURCE
-					        %s
-					        END_JAVA_SOURCE
-					
-					        Static analyzer results:
-					        %s
-					
-					        Write the Java code review now.
-					        Do not output a function call.
-					        """.formatted(requestedFile, fileContent, analysisResult)
-					));
+				    "role", "user",
+				    "content", reviewPrompt
+				));
+
 					
 			JsonNode finalResponse =
 					        callOllama(reviewMessages, List.of());
@@ -435,6 +443,7 @@ public class ToolCallingAgentService {
 						+ review
 						);
 			}
+			
 	
 			String junitSuggestion = findings.isEmpty()
 			        || suggestedTest.startsWith("No test template")
